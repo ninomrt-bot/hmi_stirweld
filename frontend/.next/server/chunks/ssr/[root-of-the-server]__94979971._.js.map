@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 6, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":"","debugId":null}},
+    {"offset": {"line": 18, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/NinoMarquet-Stirweld/Documents/IHM%202.0%20stirweld/frontend/src/app/page.tsx"],"sourcesContent":["export default function Home() {\n  return <h1 className=\"text-2xl font-semibold\">Bienvenue sur l’IHM Stirweld</h1>;\n}\n"],"names":[],"mappings":";;;;;AAAe,SAAS;IACtB,qBAAO,8OAAC;QAAG,WAAU;kBAAyB;;;;;;AAChD","debugId":null}}]
+}
