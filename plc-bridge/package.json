@@ -1,17 +1,22 @@
 {
   "name": "plc-bridge",
   "version": "1.0.0",
-  "description": "API HTTP -> ADS Beckhoff",
-  "main": "server.js",
+  "description": "WebSocket bridge to PLC",
+  "main": "dist/ws-server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "build": "tsc",
+    "start": "node dist/ws-server.js",
+    "dev": "ts-node src/ws-server.ts"
   },
   "dependencies": {
     "ads-client": "^2.1.0",
-    "cors": "^2.8.5",
-    "express": "^4.19.2",
-    "jszip": "^3.10.1",
-    "morgan": "^1.10.0"
+    "ws": "^8.17.0",
+    "jsonwebtoken": "^9.0.2",
+    "dotenv": "^16.4.5",
+    "winston": "^3.10.0"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.2"
   }
 }

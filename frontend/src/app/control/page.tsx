@@ -3,6 +3,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, Info, Play, Square, Download } from "lucide-react";
+import { usePLCWebSocket } from "../../lib/usePLCWebSocket";
 
 /**
  * Echantillon live. Remplace la génération par tes vraies mesures.
@@ -35,8 +36,9 @@ export default function ControlPage() {
   // Dernier échantillon (pour lisser la simu)
   const lastRef = useRef<LiveSample | null>(null);
 
-  const API = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3001";
-
+  const { lastSample, sendCommand } = usePLCWebSocket();
+  const lastSampleRef = useRef<LiveSample | null>(null);
+  useEffect(() => { if (lastSample) lastSampleRef.current = lastSample as LiveSample; }, [lastSample]);
 
   // --------------------- Boucle de collecte pendant l'enregistrement ---------------------
     // --------------------- Boucle chrono ---------------------
@@ -207,49 +209,10 @@ export default function ControlPage() {
    * 👉 Remplace cette fonction par ta vraie acquisition (OPC UA, Modbus, WebSocket...).
    * Retourne toujours { ts: Date.now(), FORGING_FORCE, Z_POSITION, HEAD_TEMPERATURE }.
    */
-    type ReadManyItem = { name: string; type: string };
-
     async function readLiveSample(): Promise<LiveSample> {
     const ts = Date.now();
-
-    const items: ReadManyItem[] = [
-        { name: "GVL_Public.g_force",          type: "REAL"  }, // FORCE (kN ou N selon ton code PLC)
-        { name: "GVL_Public.g_ZPos",           type: "REAL"  }, // Z POSITION (mm)
-        // choisis la tête que tu veux :
-        { name: "GVL_Public.real_g_head_temperature_n1", type: "real"   }, // ou REAL si besoin
-    ];
-
-    const r = await fetch(`${API}/api/read-many`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        cache: "no-store",
-        body: JSON.stringify({ items }),
-    });
-
-    if (!r.ok) throw new Error("PLC read failed");
-    const data = await r.json();
-
-    // petit helper pour retrouver la valeur d’un symbole
-    const getVal = (sym: string, def = 0) => {
-        const it = data?.results?.find((x: any) => x?.name === sym && x?.ok);
-        const v = Number(it?.value);
-        return Number.isFinite(v) ? v : def;
-    };
-
-    // récupère les valeurs
-    let force = getVal("GVL_Public.g_force", 0);
-    const zPos = getVal("GVL_Public.g_ZPos", 0);
-    const headT = getVal("GVL_Public.real_g_head_temperature_n1", 0);
-
-    // ⚠️ Unités : si ton PLC renvoie la FORCE en Newtons, passe-la en kN :
-    // force = force / 1000;
-
-    return {
-        ts,
-        FORGING_FORCE: force,
-        Z_POSITION: zPos,
-        HEAD_TEMPERATURE: headT,
-    };
+    const sample = lastSampleRef.current;
+    return sample ?? { ts, FORGING_FORCE: 0, Z_POSITION: 0, HEAD_TEMPERATURE: 0 };
     }
 
 
@@ -348,6 +311,26 @@ export default function ControlPage() {
                 samples={samplesCount}
                 columns="TIMESTAMP; FORGING FORCE; Z POSITION; HEAD TEMPERATURE"
               />
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => sendCommand('Start')}
+                  className="px-4 py-2 rounded-full bg-emerald-500 text-white font-semibold"
+                >
+                  Start
+                </button>
+                <button
+                  onClick={() => sendCommand('Stop')}
+                  className="px-4 py-2 rounded-full bg-rose-500 text-white font-semibold"
+                >
+                  Stop
+                </button>
+                <button
+                  onClick={() => sendCommand('Reset')}
+                  className="px-4 py-2 rounded-full bg-gray-500 text-white font-semibold"
+                >
+                  Reset
+                </button>
+              </div>
             </div>
           </div>
 
