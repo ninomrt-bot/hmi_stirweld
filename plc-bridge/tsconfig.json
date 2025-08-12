@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    /* ─────────── Dossiers ─────────── */
+    "rootDir": "./src",
+    "outDir": "./dist",
+
+    /* ─────────── Environnement Node ESM ─────────── */
+    "module": "nodenext",          // OK : import/export modernes
+    "moduleResolution": "nodenext",/* ← ajoute-le */
+    "target": "es2020",            // ES2020 suffit
+    "lib": ["es2020"],
+
+    /* interop pour les libs CommonJS (ws…) */
+    "esModuleInterop": true,
+
+    /* ─────────── Sourcemaps / d.ts ─────────── */
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+
+    /* ─────────── Stricteté ─────────── */
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+
+    /* ─────────── Divers ─────────── */
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*.ts"]
+}
