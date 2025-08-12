@@ -114,7 +114,14 @@ const ChartArea = React.memo(function ChartArea({
     <ResponsiveContainer width="100%" height="100%">
       <LineChart data={data} margin={{ top: 10, right: 20, bottom: 10, left: 0 }}>
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="t" type="number" domain={["dataMin", "dataMax"]} minTickGap={35} tickFormatter={timeFormatter}>
+        <XAxis
+          dataKey="t"
+          type="number"
+          domain={[-60, 0]}
+          ticks={[-60, -48, -36, -24, -12, 0]}
+          tickFormatter={timeFormatter}
+          minTickGap={35}
+        >
           <Label value={`Temps (${timeUnitLabel})`} position="insideBottom" offset={-5} style={{ fill: "#6b7280", fontSize: 12 }} />
         </XAxis>
         <YAxis domain={[yMin, yMax]}>
@@ -279,14 +286,23 @@ export default function DashboardPage() {
   /************ Données chart + axes ************/
   const history = useMemo(() => buffersRef.current![selected].getData(), [uiTick, selected]);
 
-  const t0 = history.length ? history[0].t : Date.now();
-  const timeUnitLabel = timeScale === "s" ? "s" : timeScale === "m" ? "min" : "h";
-  const timeFormatter = useCallback((t: number) => {
-    const dt = Math.max(0, t - t0) / 1000; // s
-    if (timeScale === "s") return `${dt.toFixed(1)}`;
-    if (timeScale === "m") return `${(dt / 60).toFixed(2)}`;
-    return `${(dt / 3600).toFixed(3)}`;
-  }, [t0, timeScale]);
+  // Convert absolute timestamps to relative seconds so that the most recent
+  // sample is at t = 0 s (right side of the graph) and the oldest visible
+  // sample is at t = -60 s. This stabilises the X-axis and prevents the
+  // constant re-scaling / flickering that occurred when feeding epoch
+  // timestamps directly to Recharts.
+  const relHistory = useMemo<Point[]>(() => {
+    if (!history.length) return [];
+    const latest = history[history.length - 1].t; // ms epoch of the newest point
+    return history
+      .map((p) => ({ t: (p.t - latest) / 1000, v: p.v })) // → seconds, negative…0
+      .filter((p) => p.t >= -60); // keep only the last 60 s
+  }, [history]);
+
+  // Simple formatter that turns -t into a positive, human-readable value
+  // (e.g. t = -12 → "12").
+  const timeFormatter = useCallback((t: number) => `${(-t).toFixed(0)}`, []);
+  const timeUnitLabel = "s";
 
   const [yMin, yMax] = useMemo<[number, number]>(() => {
     const c = CONFIGS[selected];
@@ -349,7 +365,7 @@ export default function DashboardPage() {
         {/* --- Colonne graph --- */}
         <div className="md:w-3/4 h-[360px]">
           <ChartArea
-            data={history}
+            data={relHistory}
             unit={unit}
             pathColor={pathColor}
             timeFormatter={timeFormatter}
